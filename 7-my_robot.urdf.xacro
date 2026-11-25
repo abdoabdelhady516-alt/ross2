@@ -1,0 +1,169 @@
+<?xml version="1.0"?>
+<robot name="my_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ========== القياسات (بالمتر): غيّرها هنا بس لما نشتري ========== -->
+  <xacro:property name="chassis_l" value="0.40"/>
+  <xacro:property name="chassis_w" value="0.20"/>
+  <xacro:property name="chassis_h" value="0.05"/>
+  <xacro:property name="wheel_radius" value="0.05"/>
+  <xacro:property name="wheel_width" value="0.04"/>
+  <xacro:property name="wheel_x" value="0.13"/>
+  <xacro:property name="wheel_y" value="${chassis_w/2 + wheel_width/2 + 0.01}"/>
+
+  <!-- ========== الأوزان (بالكيلو): غيّرها لما نشتري ========== -->
+  <xacro:property name="chassis_mass" value="2.0"/>
+  <xacro:property name="wheel_mass" value="0.25"/>
+
+  <!-- ========== الألوان ========== -->
+  <material name="dgrey"><color rgba="0.22 0.23 0.26 1"/></material>
+  <material name="blue"><color rgba="0.15 0.35 0.75 1"/></material>
+  <material name="black"><color rgba="0.08 0.08 0.08 1"/></material>
+  <material name="silver"><color rgba="0.7 0.72 0.76 1"/></material>
+  <material name="grey"><color rgba="0.5 0.5 0.5 1"/></material>
+  <material name="red"><color rgba="0.85 0.12 0.12 1"/></material>
+  <material name="yellow"><color rgba="0.95 0.8 0.1 1"/></material>
+  <material name="green"><color rgba="0.1 0.6 0.25 1"/></material>
+  <material name="white"><color rgba="0.92 0.92 0.92 1"/></material>
+  <material name="orange"><color rgba="0.95 0.5 0.1 1"/></material>
+
+  <!-- ========== قطعة جاهزة: عجلة ========== -->
+  <xacro:macro name="wheel" params="name x y">
+    <link name="${name}">
+      <visual>
+        <origin rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+        <material name="black"/>
+      </visual>
+      <visual>
+        <origin rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius*0.6}" length="${wheel_width+0.004}"/></geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="${wheel_mass}"/>
+        <inertia ixx="${wheel_mass*(3*wheel_radius*wheel_radius+wheel_width*wheel_width)/12}" ixy="0" ixz="0"
+                 iyy="${wheel_mass*wheel_radius*wheel_radius/2}" iyz="0"
+                 izz="${wheel_mass*(3*wheel_radius*wheel_radius+wheel_width*wheel_width)/12}"/>
+      </inertial>
+    </link>
+    <joint name="${name}_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${name}"/>
+      <origin xyz="${x} ${y} 0"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ========== قطعة جاهزة: حاجة على شكل صندوق (mass بالكيلو) ========== -->
+  <xacro:macro name="box_part" params="name size xyz color mass">
+    <link name="${name}">
+      <visual>
+        <geometry><box size="${size}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <inertial>
+        <mass value="${mass}"/>
+        <inertia ixx="${mass*0.002}" ixy="0" ixz="0" iyy="${mass*0.002}" iyz="0" izz="${mass*0.002}"/>
+      </inertial>
+    </link>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${name}"/>
+      <origin xyz="${xyz}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ========== قطعة جاهزة: حاجة على شكل أسطوانة (mass بالكيلو) ========== -->
+  <xacro:macro name="cyl_part" params="name radius length xyz color mass">
+    <link name="${name}">
+      <visual>
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <inertial>
+        <mass value="${mass}"/>
+        <inertia ixx="${mass*0.002}" ixy="0" ixz="0" iyy="${mass*0.002}" iyz="0" izz="${mass*0.002}"/>
+      </inertial>
+    </link>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${name}"/>
+      <origin xyz="${xyz}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ========== الجسم الأساسي ========== -->
+  <!-- base_footprint: نقطة على الأرض تحت الروبوت (Nav2 بيحبها) -->
+  <link name="base_footprint"/>
+
+  <!-- base_link: مركز الجسم السفلي، على ارتفاع محور العجلات -->
+  <link name="base_link">
+    <visual>
+      <geometry><box size="${chassis_l} ${chassis_w} ${chassis_h}"/></geometry>
+      <material name="dgrey"/>
+    </visual>
+    <collision>
+      <geometry><box size="${chassis_l} ${chassis_w} ${chassis_h}"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="${chassis_mass}"/>
+      <inertia ixx="${chassis_mass*(chassis_w*chassis_w+chassis_h*chassis_h)/12}" ixy="0" ixz="0"
+               iyy="${chassis_mass*(chassis_l*chassis_l+chassis_h*chassis_h)/12}" iyz="0"
+               izz="${chassis_mass*(chassis_l*chassis_l+chassis_w*chassis_w)/12}"/>
+    </inertial>
+  </link>
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius}"/>
+  </joint>
+
+  <!-- اللوح العلوي (الـ deck) اللي بنركّب عليه الأجهزة -->
+  <xacro:box_part name="top_deck" size="${chassis_l+0.02} ${chassis_w+0.01} 0.008"
+                  xyz="0 0 ${chassis_h/2+0.004}" color="blue" mass="0.4"/>
+
+  <!-- ========== العجلات الأربعة (Skid-steer) ========== -->
+  <xacro:wheel name="front_left_wheel"  x="${wheel_x}"  y="${wheel_y}"/>
+  <xacro:wheel name="front_right_wheel" x="${wheel_x}"  y="${-wheel_y}"/>
+  <xacro:wheel name="rear_left_wheel"   x="${-wheel_x}" y="${wheel_y}"/>
+  <xacro:wheel name="rear_right_wheel"  x="${-wheel_x}" y="${-wheel_y}"/>
+
+  <!-- ========== الحساسات (اللي على الـ Orange Pi) ========== -->
+  <!-- الـ lidar على عمود فوق الـ deck -->
+  <xacro:cyl_part name="lidar_mast" radius="0.01" length="0.06" xyz="0.12 0 0.063" color="grey" mass="0.05"/>
+  <xacro:cyl_part name="lidar_link" radius="0.035" length="0.04" xyz="0.12 0 0.113" color="red" mass="0.2"/>
+
+  <!-- الكاميرا قدام في النص -->
+  <xacro:box_part name="camera_link" size="0.02 0.08 0.03" xyz="0.19 0 0.048" color="white" mass="0.1"/>
+  <!-- camera_optical_frame: نفس مكان الكاميرا بس بالاتجاه اللي ROS بتتوقعه لصور الكاميرا -->
+  <link name="camera_optical_frame"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+  </joint>
+
+  <!-- ========== الحساسات (اللي على الـ STM32) ========== -->
+  <!-- ToF قدام تحت: حساس القرب / الطوارئ -->
+  <xacro:box_part name="tof_link" size="0.01 0.03 0.015" xyz="0.205 0 0.0" color="orange" mass="0.01"/>
+
+  <!-- IMU على الـ deck -->
+  <xacro:box_part name="imu_link" size="0.025 0.02 0.005" xyz="0.05 0 0.0365" color="green" mass="0.01"/>
+
+  <!-- ========== الأجهزة اللي فوق الـ deck ========== -->
+  <xacro:box_part name="battery_link"  size="0.14 0.07 0.05"   xyz="-0.10 0 0.058"      color="yellow" mass="0.8"/>
+  <xacro:box_part name="stm32_link"    size="0.083 0.07 0.015" xyz="-0.02 -0.07 0.0405" color="green"  mass="0.05"/>
+  <xacro:box_part name="orangepi_link" size="0.09 0.06 0.02"   xyz="-0.02 0.07 0.043"   color="black"  mass="0.1"/>
+
+  <!-- ========== الهوائيات ========== -->
+  <xacro:cyl_part name="antenna_4g_link" radius="0.005" length="0.07" xyz="-0.18 -0.07 0.068" color="black" mass="0.03"/>
+  <xacro:cyl_part name="gnss_antenna_link" radius="0.02" length="0.012" xyz="-0.17 0.07 0.039" color="white" mass="0.05"/>
+
+  <!-- ========== إعدادات Gazebo (في ملف منفصل) ========== -->
+  <xacro:include filename="my_robot_gazebo.xacro"/>
+
+</robot>

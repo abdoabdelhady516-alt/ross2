@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- احتكاك قليل شوية للعجلات عشان الـ Skid-steer تعرف تلف -->
+  <gazebo reference="front_left_wheel"><mu1>0.3</mu1><mu2>0.3</mu2></gazebo>
+  <gazebo reference="front_right_wheel"><mu1>0.3</mu1><mu2>0.3</mu2></gazebo>
+  <gazebo reference="rear_left_wheel"><mu1>0.3</mu1><mu2>0.3</mu2></gazebo>
+  <gazebo reference="rear_right_wheel"><mu1>0.3</mu1><mu2>0.3</mu2></gazebo>
+
+  <!-- الـ plugin اللي بيحرّك العجلات: بياخد /cmd_vel وبيطلّع odometry -->
+  <gazebo>
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>front_left_wheel_joint</left_joint>
+      <left_joint>rear_left_wheel_joint</left_joint>
+      <right_joint>front_right_wheel_joint</right_joint>
+      <right_joint>rear_right_wheel_joint</right_joint>
+      <wheel_separation>${2*wheel_y}</wheel_separation>
+      <wheel_radius>${wheel_radius}</wheel_radius>
+      <topic>cmd_vel</topic>
+      <odom_topic>odom</odom_topic>
+      <tf_topic>tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <odom_publish_frequency>30</odom_publish_frequency>
+    </plugin>
+  </gazebo>
+
+</robot>
